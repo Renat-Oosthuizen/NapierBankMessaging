@@ -38,7 +38,7 @@ public class UIScreenOne extends JFrame {
 		myController = controller; //Assign myController as an instance of UI_Controller
 		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); //The application will quit when the JFrame is closed.
-		setBounds(0, 0, 1920, 1080); //JFrame is created at coordinates 0, 0 of screen with 1920x1080 pixel dimensions.
+		setBounds(0, 0, 1280, 720);//(0, 0, 1920, 1080); //JFrame is created at coordinates 0, 0 of screen with 1920x1080 pixel dimensions.
 		JPanel contentPane = new JPanel(); //Assign contentPane to be a new instance of JPanel. This is the main panel of the JFrame.
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5)); //Create a 5 pixel border around all sides of the contentPane.
 		setContentPane(contentPane); //Insert contentPane into the JFrame.
@@ -63,7 +63,7 @@ public class UIScreenOne extends JFrame {
 		sl_contentPane.putConstraint(SpringLayout.NORTH, txtHeaderContent, 255, SpringLayout.NORTH, contentPane);
 		sl_contentPane.putConstraint(SpringLayout.WEST, txtHeaderContent, 576, SpringLayout.WEST, contentPane);
 		sl_contentPane.putConstraint(SpringLayout.EAST, txtHeaderContent, -576, SpringLayout.EAST, contentPane);
-		txtHeaderContent.setText("S123456789");
+		txtHeaderContent.setText("E123456789");
 		contentPane.add(txtHeaderContent);
 		txtHeaderContent.setColumns(10);
 		
@@ -74,8 +74,16 @@ public class UIScreenOne extends JFrame {
 		sl_contentPane.putConstraint(SpringLayout.SOUTH, txtrBodyContent, -369, SpringLayout.SOUTH, contentPane);
 		sl_contentPane.putConstraint(SpringLayout.WEST, txtrBodyContent, 576, SpringLayout.WEST, contentPane);
 		sl_contentPane.putConstraint(SpringLayout.EAST, txtrBodyContent, -576, SpringLayout.EAST, contentPane);
-		txtrBodyContent.setText("Saw your message ROTFL, can’t wait to see you");
+		txtrBodyContent.setText("I like test.test"); 
 		contentPane.add(txtrBodyContent);
+		
+		//I like youtube.com, and https://github.com/linkedin/URL-Detector.
+		
+		/*Saw your message @JohnDoe ROTFL, canâ€™t wait to see you.
+		Looking forward to seeing you too @JaneDoe 
+		#Party #Fireworks*/
+		
+		
 		
 		//Message Header Label
 		lblHeader = new JLabel("Message Header:");

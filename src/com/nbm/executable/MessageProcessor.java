@@ -1,11 +1,35 @@
 package com.nbm.executable;
+
+import com.linkedin.urls.Url;
+import com.linkedin.urls.detection.UrlDetector;
+import com.linkedin.urls.detection.UrlDetectorOptions;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
+
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+
+import org.apache.commons.validator.routines.EmailValidator;
+
+
+
+
+
 
 public class MessageProcessor {
 	
@@ -25,8 +49,20 @@ public class MessageProcessor {
 	private LinkedList<String> mentionsList = new LinkedList(); //Linked list will hold the  Mentions
 	private LinkedList<String> trendingList = new LinkedList(); //Linked list will hold the  Mentions
 	private HashMap<String, String> abbreviations = new HashMap<String, String>(); //Hashmap to store abbreviations from the csv file
-	private LinkedList<URL> quarantineList = new LinkedList(); //Linked list will hold the quarantined URLs
+	private LinkedList<String> quarantineList = new LinkedList(); //LinkedList will hold the quarantined URLs
 	private LinkedList<String> sirList = new LinkedList();//SIR List that must contain sort code and Nature of Incident
+	private String[] splitMessage;
+	//private String xml = "";
+	private String xml = "<Message>\r\n"
+			+ "    <Header>T123456789</Header>\r\n"
+			+ "    <Sender>123456789012345</Sender>\r\n"
+			+ "    <Subject></Subject>\r\n"
+			+ "    <SortCode></SortCode>\r\n"
+			+ "    <NatureOfIncident></NatureOfIncident>\r\n"
+			+ "    <Text>Saw your message @JohnDoe ROTFL, can’t wait to see you.\r\n"
+			+ "Looking forward to seeing you too @JaneDoe \r\n"
+			+ " #Party #Fireworks</Text>\r\n"
+			+ "</Message>";
 	
 	//Default Constructor. Loads the abbreviations from the textwords.csv
 	MessageProcessor()
@@ -74,21 +110,36 @@ public class MessageProcessor {
 	//This function processes Email messages
 	private void processEmail(String body)
 	{
+		separateMessage(body);
+		
+		for (int i = 0; i < splitMessage.length; i++)
+		{
+			detectURL(splitMessage[i]);
+		}
+		
+		System.out.println(processedMessage);
+		System.out.println(quarantineList.get(0));
 		
 	}
 	
 	//This function processes Tweet messages
 	private void processTweet(String body)
 	{
-		expandAbbreviations(body);
-		findHashtags(body);
-		findMentions(body);
+		//expandAbbreviations(body);
+		//findHashtags(body);
+		//findMentions(body);
+		try {
+			xmlConverter();
+		} catch (SAXException | IOException | ParserConfigurationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	//This function will separate the message into different sections
-	private void separateMessage()
+	private void separateMessage(String body)
 	{
-		
+		splitMessage = body.split("\\s+");  //Matches any punctuation that is followed by a white space
 	}
 	
 	//This function gets the abbreviations from textwords.csv and stores them in the abbreviations Hashmap for later use.
@@ -186,36 +237,58 @@ public class MessageProcessor {
 		System.out.println(processedMessage);
 	}
 	
-	//This method will detect any URLs in the message body 
-	// !!!Only detects things starting with http and https (not www). Any punctuation after the url will be appended Try this: https://github.com/linkedin/URL-Detector  !!!
-	private void detectURL(String message)
+	//This will detect check if the provided word is a URL
+	private void detectURL(String word) //Only used for email bodies
+	{
+		//Email bodies will not have email addresses!
+		//Split punctuation if it's at the end of a word ?
+		UrlDetector parser = new UrlDetector(word, UrlDetectorOptions.Default);
+		List<Url> found = parser.detect();
+		
+		String qurantineMessage = "<URL Quarantined> ";
+	    
+	    if (found.isEmpty())
+	    {
+	    	processedMessage += word + " ";
+	    }
+	    else
+	    {
+	    	quarantineList.add(word);
+	    	processedMessage += qurantineMessage;
+	    }
+	    
+	}
+	
+	//Checks if the email address is valid
+	public static boolean isValidEmailAddress(String email) 
+	{
+		boolean valid = true;
+		return valid = EmailValidator.getInstance().isValid(email);
+	}
+	
+	//This will convert the text input from the UI into XML format
+	private void xmlConverter() throws SAXException, IOException, ParserConfigurationException
+	{
+		Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(new StringReader(xml))); //Convert input string into xml
+		
+		System.out.println("XML Conversion successiful");
+
+		NodeList messageNodes = doc.getElementsByTagName("Message"); //Store all Messages as nodes in a NodeList
+		
+		if (messageNodes.getLength() > 0) //If there are any messages...
+		{
+			Element message = (Element)messageNodes.item(0); //Get the first message
+			System.out.println(message.getElementsByTagName("Text").item(0).getTextContent()); //Get contents from the message tag "Text"
+		} 
+		else //If there are no messages...
+		{ 
+			System.out.println("No Messages"); 
+		}
+	}
+	
+	//This function will check that the input is of a valid format
+	private void checkInput()
 	{
 		
-		String[] splitMessage = message.split(" ");  //Split the message into individual words.
-		
-        // Attempt to convert each item into an URL.   
-        for ( String i : splitMessage)  try 
-        {
-            URL url = new URL(i);
-            
-            //If successful add the url to the quarantineList
-            quarantineList.add(url);
-            
-            //Replace the url with <URL Quarantined> in processed message
-            processedMessage += "<URL Quarantined> ";
-            
-            // If possible then replace with anchor...
-            //System.out.print("<a href=\"" + url + "\">"+ url + "</a> " );    
-        } 
-        catch (MalformedURLException e) 
-        {
-            // If there was no URL then add the word to the processed message
-        	processedMessage += ( i + " " );
-            
-        }
-        
-        System.out.println(processedMessage);
-        System.out.println(quarantineList);
 	}
-
 }
