@@ -21,8 +21,12 @@ import javax.swing.JTextArea;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.awt.event.ActionEvent;
 import java.awt.CardLayout;
+import java.awt.SystemColor;
+import javax.swing.UIManager;
+import java.awt.ScrollPane;
 
 
 public class UserInterface extends JFrame{
@@ -44,21 +48,29 @@ public class UserInterface extends JFrame{
 	private File file = null; //This stores the file for processing.
 	private JLabel lblFilePath = new JLabel(""); //Label that displays the file path of the selected XML file
 	private JButton btnProcessFile = new JButton("Process File"); //Button to process the XML file
-	private JLabel lblFileInfo = new JLabel("File Processed!"); //Label that provides information about processing the XML file (success or error messages)
 	
 	
 	private JButton btnProcessText = new JButton("Process Text"); //Button to process the text from the Message Header and the Message Body
-	private JLabel lblTextInfo = new JLabel("Text processed successfully!"); //Label that provides information about processing the text (success or error messages)
+	private JLabel lblProcessInfo = new JLabel(""); //Label that provides information about processing the text (success or error messages)
 	
 	private JButton btnViewLists = new JButton("View Lists"); //Button opens card2 and displays the Mentions List, SIR and Trending List
 	
 	private JLabel lblProcessedMessage = new JLabel("Latest Processed Message:"); //Label for the processed message text area
 	private JTextArea txtAreaProcessedMessage = new JTextArea(); //Processed message goes here
 	
+	private JLabel lblMentionsList = new JLabel("Mentions List:");
+	private final ScrollPane scrollPaneMentionsList = new ScrollPane();
+	private JTextArea txtAreaMentionsList = new JTextArea();
+	
+	private final JLabel lblTrendingList = new JLabel("Trending List:");
+	private final ScrollPane scrollPaneTrendingList = new ScrollPane();
+	private JTextArea txtAreaTrendingList = new JTextArea();
+	
+	private final JLabel lblSIRList = new JLabel("SIR List:");
+	private final ScrollPane scrollPaneSIRList = new ScrollPane();
+	private JTextArea txtAreaSIRList = new JTextArea();
 	
 	private JButton btnReturn = new JButton("Add More Messages");
-	private JTextArea txtAreaLists = new JTextArea();
-	private JLabel lblLists = new JLabel("Lists:");
 	
 	public UserInterface(UIController controller) 
 	{
@@ -67,7 +79,7 @@ public class UserInterface extends JFrame{
 		myController = controller; //Assign myController as an instance of UI_Controller
 		this.setTitle("Napier Bank Messaging"); //Set title for the JFrame
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); //The application will quit when the JFrame is closed.
-		this.setBounds(0, 0, 1920, 1080); //JFrame is created at coordinates 0, 0 of screen with 1920x1080 pixel dimensions.
+		this.setBounds(0,0,1280, 720); //(0, 0, 1920, 1080); //JFrame is created at coordinates 0, 0 of screen with 1920x1080 pixel dimensions.
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5)); //Create a 5 pixel border around all sides of the contentPane.
 		this.setContentPane(contentPane); //Set content of the JFrame to contentPane JPanel
 		
@@ -75,14 +87,15 @@ public class UserInterface extends JFrame{
 		
 		//Set the GridBag layout for card1 and it's components
 		GridBagLayout gbl_card1 = new GridBagLayout();
-		gbl_card1.columnWidths = new int[]{50, 0, 0, 0, 0, 0, 0, 50};
+		gbl_card1.columnWidths = new int[]{100, 400, 0, 0, 0, 0, 400, 100};
 		gbl_card1.rowHeights = new int[]{23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-		gbl_card1.columnWeights = new double[]{1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0};
+		gbl_card1.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 		gbl_card1.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
+		card1.setBackground(UIManager.getColor("ToolTip.background"));
 		card1.setLayout(gbl_card1);
 		
 		GridBagConstraints gbc_lblHeader = new GridBagConstraints();
-		gbc_lblHeader.anchor = GridBagConstraints.WEST;
+		gbc_lblHeader.fill = GridBagConstraints.HORIZONTAL;
 		gbc_lblHeader.insets = new Insets(0, 0, 5, 5);
 		gbc_lblHeader.gridx = 1;
 		gbc_lblHeader.gridy = 7;
@@ -102,6 +115,8 @@ public class UserInterface extends JFrame{
 		gbc_txtAreaHeader.fill = GridBagConstraints.BOTH;
 		gbc_txtAreaHeader.gridx = 1;
 		gbc_txtAreaHeader.gridy = 8;
+		txtAreaHeader.setWrapStyleWord(true);
+		txtAreaHeader.setLineWrap(true);
 		card1.add(txtAreaHeader, gbc_txtAreaHeader);
 		
 		GridBagConstraints gbc_txtAreaProcessedMessage = new GridBagConstraints();
@@ -109,6 +124,8 @@ public class UserInterface extends JFrame{
 		gbc_txtAreaProcessedMessage.fill = GridBagConstraints.BOTH;
 		gbc_txtAreaProcessedMessage.gridx = 6;
 		gbc_txtAreaProcessedMessage.gridy = 8;
+		txtAreaProcessedMessage.setWrapStyleWord(true);
+		txtAreaProcessedMessage.setLineWrap(true);
 		txtAreaProcessedMessage.setEditable(false);
 		card1.add(txtAreaProcessedMessage, gbc_txtAreaProcessedMessage);
 		
@@ -119,7 +136,14 @@ public class UserInterface extends JFrame{
 		gbc_btnImportFile.gridy = 9;
 		card1.add(btnImportFile, gbc_btnImportFile);
 		
+		GridBagConstraints gbc_lblTextInfo = new GridBagConstraints();
+		gbc_lblTextInfo.insets = new Insets(0, 0, 5, 5);
+		gbc_lblTextInfo.gridx = 6;
+		gbc_lblTextInfo.gridy = 11;
+		card1.add(lblProcessInfo, gbc_lblTextInfo);
+		
 		GridBagConstraints gbc_btnProcessText = new GridBagConstraints();
+		gbc_btnProcessText.fill = GridBagConstraints.HORIZONTAL;
 		gbc_btnProcessText.insets = new Insets(0, 0, 5, 5);
 		gbc_btnProcessText.gridx = 1;
 		gbc_btnProcessText.gridy = 15;
@@ -139,7 +163,7 @@ public class UserInterface extends JFrame{
 		card1.add(lblFilePath, gbc_lblFilePath);
 		
 		GridBagConstraints gbc_lblBody = new GridBagConstraints();
-		gbc_lblBody.anchor = GridBagConstraints.WEST;
+		gbc_lblBody.fill = GridBagConstraints.HORIZONTAL;
 		gbc_lblBody.insets = new Insets(0, 0, 5, 5);
 		gbc_lblBody.gridx = 1;
 		gbc_lblBody.gridy = 10;
@@ -152,25 +176,14 @@ public class UserInterface extends JFrame{
 		gbc_btnProcessFile.gridy = 10;
 		card1.add(btnProcessFile, gbc_btnProcessFile);
 		
-		GridBagConstraints gbc_lblFileInfo = new GridBagConstraints();
-		gbc_lblFileInfo.anchor = GridBagConstraints.WEST;
-		gbc_lblFileInfo.insets = new Insets(0, 0, 5, 5);
-		gbc_lblFileInfo.gridx = 4;
-		gbc_lblFileInfo.gridy = 10;
-		card1.add(lblFileInfo, gbc_lblFileInfo);
-		
 		GridBagConstraints gbc_txtAreaBody = new GridBagConstraints();
 		gbc_txtAreaBody.insets = new Insets(0, 0, 5, 5);
 		gbc_txtAreaBody.fill = GridBagConstraints.BOTH;
 		gbc_txtAreaBody.gridx = 1;
 		gbc_txtAreaBody.gridy = 11;
+		txtAreaBody.setWrapStyleWord(true);
+		txtAreaBody.setLineWrap(true);
 		card1.add(txtAreaBody, gbc_txtAreaBody);
-		
-		GridBagConstraints gbc_lblTextInfo = new GridBagConstraints();
-		gbc_lblTextInfo.insets = new Insets(0, 0, 5, 5);
-		gbc_lblTextInfo.gridx = 1;
-		gbc_lblTextInfo.gridy = 13;
-		card1.add(lblTextInfo, gbc_lblTextInfo);
 		
 		//card1.setBackground(Color.BLUE);
 		//card2.setBackground(Color.RED);
@@ -182,7 +195,15 @@ public class UserInterface extends JFrame{
 			public void actionPerformed(ActionEvent e) {
 				
 				System.out.println("Processing...");
-				myController.processMessage(txtAreaHeader.getText(), txtAreaBody.getText());
+				try 
+				{
+					myController.importText(txtAreaHeader.getText() + txtAreaBody.getText());
+				} 
+				catch (SAXException | IOException | ParserConfigurationException e1) 
+				{
+					lblProcessInfo.setForeground(Color.RED); //Change info message colour to red
+					lblProcessInfo.setText("Input text format not valid."); //Display error message 
+				}
 			}
 		});
 		
@@ -223,9 +244,37 @@ public class UserInterface extends JFrame{
         btnViewLists.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				
+				String content = ""; //Temporary variable used to format the lists before they are displayed
+				
+				//Iterate through mentions list, to format it and then display it via content variable. Clear the content variable for reuse.
+				for (String temp : myController.getMentionsList())
+				{
+					content += temp + "\n";
+				}
+				txtAreaMentionsList.setText(content);
+				content = "";
+				
+				//Iterate through trending HashMap, to format it and then display it via content variable. Clear the content variable for reuse.
+				for (HashMap.Entry<String, Integer> entry : myController.getTrendingMap().entrySet()) {
+				    
+					content += entry.getKey() + " : " + entry.getValue() + "\n";
+
+				}
+				txtAreaTrendingList.setText(content);
+				content = "";
+				
+				//Iterate through sirList, to format it and then display it via content variable.
+				for (String temp : myController.getSirList())
+				{
+					content += temp + "\n";
+				}
+				txtAreaSIRList.setText(content);
+				
 	            cardLayout.show(contentPane, "2"); //Show card2
 			}
 		});
+        
+		card2.setBackground(UIManager.getColor("ToolTip.background"));
 		        		        		        		
 
 		//--------------------------------------CARD 2-------------------------------------------------------------------
@@ -234,29 +283,67 @@ public class UserInterface extends JFrame{
 		
 		//Set the GridBag layout for card1 and it's components
 		GridBagLayout gbl_card2 = new GridBagLayout();
-		gbl_card2.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-		gbl_card2.rowHeights = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-		gbl_card2.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, Double.MIN_VALUE};
-		gbl_card2.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
+		gbl_card2.columnWidths = new int[]{100, 300, 0, 300, 0, 300, 0, 100};
+		gbl_card2.rowHeights = new int[]{23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+		gbl_card2.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+		gbl_card2.rowWeights = new double[]{0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
 		card2.setLayout(gbl_card2);
 		
-		GridBagConstraints gbc_lblLists = new GridBagConstraints();
-		gbc_lblLists.insets = new Insets(0, 0, 5, 5);
-		gbc_lblLists.gridx = 16;
-		gbc_lblLists.gridy = 7;
-		card2.add(lblLists, gbc_lblLists);
+		GridBagConstraints gbc_lblMentionsList = new GridBagConstraints();
+		gbc_lblMentionsList.anchor = GridBagConstraints.WEST;
+		gbc_lblMentionsList.insets = new Insets(0, 0, 5, 5);
+		gbc_lblMentionsList.gridx = 1;
+		gbc_lblMentionsList.gridy = 2;
+		lblMentionsList.setFont(new Font("Tahoma", Font.BOLD, 12));
+		card2.add(lblMentionsList, gbc_lblMentionsList);
 		
-		GridBagConstraints gbc_txtAreaLists = new GridBagConstraints();
-		gbc_txtAreaLists.insets = new Insets(0, 0, 5, 5);
-		gbc_txtAreaLists.fill = GridBagConstraints.BOTH;
-		gbc_txtAreaLists.gridx = 16;
-		gbc_txtAreaLists.gridy = 8;
-		card2.add(txtAreaLists, gbc_txtAreaLists);
+		GridBagConstraints gbc_lblTrendingList = new GridBagConstraints();
+		gbc_lblTrendingList.anchor = GridBagConstraints.WEST;
+		gbc_lblTrendingList.insets = new Insets(0, 0, 5, 5);
+		gbc_lblTrendingList.gridx = 3;
+		gbc_lblTrendingList.gridy = 2;
+		lblTrendingList.setFont(new Font("Tahoma", Font.BOLD, 12));
+		card2.add(lblTrendingList, gbc_lblTrendingList);
+		
+		GridBagConstraints gbc_lblSIRList = new GridBagConstraints();
+		gbc_lblSIRList.anchor = GridBagConstraints.WEST;
+		gbc_lblSIRList.insets = new Insets(0, 0, 5, 5);
+		gbc_lblSIRList.gridx = 5;
+		gbc_lblSIRList.gridy = 2;
+		lblSIRList.setFont(new Font("Tahoma", Font.BOLD, 12));
+		card2.add(lblSIRList, gbc_lblSIRList);
+		
+		GridBagConstraints gbc_scrollPaneMentionsList = new GridBagConstraints();
+		gbc_scrollPaneMentionsList.fill = GridBagConstraints.BOTH;
+		gbc_scrollPaneMentionsList.insets = new Insets(0, 0, 5, 5);
+		gbc_scrollPaneMentionsList.gridx = 1;
+		gbc_scrollPaneMentionsList.gridy = 3;
+		txtAreaMentionsList.setEditable(false);
+		scrollPaneMentionsList.add(txtAreaMentionsList);
+		card2.add(scrollPaneMentionsList, gbc_scrollPaneMentionsList);
+		
+		GridBagConstraints gbc_scrollPaneTrendingList = new GridBagConstraints();
+		gbc_scrollPaneTrendingList.fill = GridBagConstraints.BOTH;
+		gbc_scrollPaneTrendingList.insets = new Insets(0, 0, 5, 5);
+		gbc_scrollPaneTrendingList.gridx = 3;
+		gbc_scrollPaneTrendingList.gridy = 3;
+		txtAreaTrendingList.setEditable(false);
+		scrollPaneTrendingList.add(txtAreaTrendingList);
+		card2.add(scrollPaneTrendingList, gbc_scrollPaneTrendingList);
+		
+		GridBagConstraints gbc_scrollPaneSIRList = new GridBagConstraints();
+		gbc_scrollPaneSIRList.fill = GridBagConstraints.BOTH;
+		gbc_scrollPaneSIRList.insets = new Insets(0, 0, 5, 5);
+		gbc_scrollPaneSIRList.gridx = 5;
+		gbc_scrollPaneSIRList.gridy = 3;
+		txtAreaSIRList.setEditable(false);
+		scrollPaneSIRList.add(txtAreaSIRList);
+		card2.add(scrollPaneSIRList, gbc_scrollPaneSIRList);
 		
 		GridBagConstraints gbc_btnReturn = new GridBagConstraints();
-		gbc_btnReturn.insets = new Insets(0, 0, 0, 5);
-		gbc_btnReturn.gridx = 16;
-		gbc_btnReturn.gridy = 28;
+		gbc_btnReturn.insets = new Insets(0, 0, 5, 5);
+		gbc_btnReturn.gridx = 1;
+		gbc_btnReturn.gridy = 8;
 		card2.add(btnReturn, gbc_btnReturn);
 		
         //Import More Messages Button
@@ -274,10 +361,17 @@ public class UserInterface extends JFrame{
 		return txtAreaProcessedMessage;
 	}
 
+	public JLabel getLblProcessInfo() {
+		return lblProcessInfo;
+	}
 	
 	//-------------------------------------SETTERS--------------------------------------------------------------------------
 	public void setTxtAreaProcessedMessage(JTextArea txtAreaProcessedMessage) {
 		this.txtAreaProcessedMessage = txtAreaProcessedMessage;
+	}
+
+	public void setLblProcessInfo(JLabel lblProcessInfo) {
+		this.lblProcessInfo = lblProcessInfo;
 	}
 	
 }

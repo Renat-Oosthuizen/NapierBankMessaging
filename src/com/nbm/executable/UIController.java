@@ -1,12 +1,17 @@
 package com.nbm.executable;
 
+import java.awt.Color;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -28,13 +33,20 @@ import com.linkedin.urls.detection.UrlDetectorOptions;
 
 public class UIController {
 	
-	/**UI variable used to store in instance of the UI_SCreenOne class.*/
 	private static UserInterface userInterface;
 	
-	/**
-	 * Default constructor for the UI_Controller.
-	 * It will then create an instance of the UI and make it visible.
-	 */
+	private HashMap<String, String> abbreviations = new HashMap<String, String>(); //HashMap to store abbreviations from the csv file
+	
+	public String currentHeader; //Header of the message currently being processed
+	private String processedMessage = "";	//Message text is temporarily stored here when URLs are being quarantined or abbreviations are being expanded. Once the message is processed it is written from here to the Message instance
+	private HashMap<String, Message> messageMap = new HashMap<String, Message>(); //HashMap where the key is the header and the value is the Message object. This was chosen as it allows for easily accessible nested JSON objects
+	
+	//private LinkedList<String> hashtagList = new LinkedList(); //Linked list will hold the  Hashtags
+	private LinkedList<String> mentionsList = new LinkedList<String>(); //Linked list will hold mentions (@User)
+	private HashMap<String, Integer> trendingMap = new HashMap<String, Integer>(); //HashMap will hold hashtags (#Party) and number of occurrences
+	private LinkedList<String> sirList = new LinkedList<String>();//SIR LinkedList that will contain Sort Code and Nature of Incident
+	private HashMap<String, ArrayList<String>> quarantineMap = new HashMap<String, ArrayList<String>>(); //HashMap will hold the quarantined URLs. Multiple URLs can be linked to the same header
+	
 	public UIController() {
 		
 		getAbbreviations(); //Loads the abbreviations from the textwords.csv
@@ -42,38 +54,9 @@ public class UIController {
 		userInterface.setVisible(true); //Make userInterface visible.
 	}
 	
-	//This function will process the incoming message
-	public void processMessage(String header, String body)
-	{
-		//Check that header and body are not empty
-		if (!header.isEmpty() && !body.isEmpty())
-		{
-			userInterface.getTxtAreaProcessedMessage().setText(receiveMessage(header, body)); //Process the message, output it to the JSON file and set the Processed Message text in the UI
-		}
-		else
-		{
-			//Error if header or body are empty
-			System.out.println("Header or Body is empty.");
-		}
-	}
-	
-	//-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-	
-	private String currentHeader; //Header of the message currently being processed
-	private String processedMessage = "";	//Message text is temporarily stored here when URLs are being quarantined or abbreviations are being expanded. Once the message is processed it is written from here to the Message instance
-	
-	
-	private LinkedList<String> hashtagList = new LinkedList(); //Linked list will hold the  Hashtags
-	private LinkedList<String> mentionsList = new LinkedList(); //Linked list will hold mentions (@User)
-	private LinkedList<String> trendingList = new LinkedList(); //Linked list will hold hashtags (#Party) 
-	private HashMap<String, String> abbreviations = new HashMap<String, String>(); //HashMap to store abbreviations from the csv file
-	private HashMap<String, ArrayList<String>> quarantineMap = new HashMap<String, ArrayList<String>>(); //HashMap will hold the quarantined URLs. Multiple URLs can be linked to the same header
-	private LinkedList<String> sirList = new LinkedList();//SIR List that must contain sort code and Nature of Incident
-	private HashMap<String, Message> messageMap = new HashMap<String, Message>(); //HashMap where the key is the header and the value is the Message object
-	
 	//--------------------------------------PREP AND RECEIVING MESSAGE------------------------------------------------------	
 	
-	//This function gets the abbreviations from textwords.csv and stores them in the abbreviations HashMap for later use.
+	//This function gets the abbreviations from textwords.csv and stores them in the abbreviations HashMap for later use. Runs when class is instantiated.
 	private void getAbbreviations()
 	{
 		try 
@@ -88,9 +71,9 @@ public class UIController {
 		
 			while (line != null) //While line exists
 			{ 
-					fileContent = line.split(","); //Split each line at the comma
-					abbreviations.put(fileContent[0], fileContent[1]);	//Add abbreviations to the hash map as key/value pairs for each line
-					line = reader.readLine(); //read the next line.
+				fileContent = line.split(","); //Split each line at the comma
+				abbreviations.put(fileContent[0], fileContent[1]);	//Add abbreviations to the hash map as key/value pairs for each line
+				line = reader.readLine(); //read the next line.
 			}
 			
 			file.close();	//Close the file reader to save memory
@@ -102,37 +85,7 @@ public class UIController {
 		}
 	}
 	
-	//This will convert the text input from the UI into XML format, it will then write the data into a Message object instance.
-	private void xmlConverter(String xml) throws SAXException, IOException, ParserConfigurationException
-	{
-		Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(new StringReader(xml))); //Convert input string into xml
-		
-		//System.out.println("XML Conversion successful");
-
-		NodeList messageNodes = doc.getElementsByTagName("Message"); //Store all Messages as nodes in a NodeList
-		
-		for (int i = 0; i < messageNodes.getLength(); i++) //For each message
-		{
-			Element element = (Element)messageNodes.item(i); //Get the first message
-			
-			Message message = new Message();
-
-			message.setSender(element.getElementsByTagName("Sender").item(0).getTextContent());
-			message.setSubject(element.getElementsByTagName("Subject").item(0).getTextContent());
-			message.setSortCode(element.getElementsByTagName("SortCode").item(0).getTextContent());
-			message.setNatureOfIncident(element.getElementsByTagName("NatureOfIncident").item(0).getTextContent());
-			message.setText(element.getElementsByTagName("Text").item(0).getTextContent());
-			
-			currentHeader = element.getElementsByTagName("Header").item(0).getTextContent();
-			messageMap.put(currentHeader, message);
-
-		} 
-		/*else //If there are no messages...
-		{ 
-			System.out.println("No Messages"); 
-		}*/
-	}
-	
+	//This function imports the user selected XML file from the UI and attempts to process each message in the file.
 	public void importXML(File file) throws SAXException, IOException, ParserConfigurationException
 	{
 		
@@ -159,6 +112,8 @@ public class UIController {
 			
 			for (int i = 0; i < messageNodes.getLength(); i++) //For each message
 			{
+				processedMessage = ""; //Clear the processed message. So that it can be used with a new message
+				
 				Element element = (Element)messageNodes.item(i); //Get the first message
 				
 				Message message = new Message();
@@ -172,88 +127,186 @@ public class UIController {
 				currentHeader = element.getElementsByTagName("Header").item(0).getTextContent();
 				messageMap.put(currentHeader, message);
 				
-				if (currentHeader.charAt(0) == 'S')
-				{
-					System.out.println("SMS");
-					
-					processSMS(messageMap.get(currentHeader).getText()); //Process the message
-					
-				}
-				else if (currentHeader.charAt(0) == 'E')
-				{
-					System.out.println("Email");
-					
-					processEmail(messageMap.get(currentHeader).getText());
-				}
-				else if (currentHeader.charAt(0) == 'T')
-				{
-					System.out.println("Tweet");
-					
-					processTweet(messageMap.get(currentHeader).getText());
-				}
-				else
-				{
-					//Error if header does not start with a valid message identifier. Case sensitive.
-					System.out.println("Header is not valid.");
-				}
+				checkInput(); //Check that message format is valid and determine message type
 
 			} 
 
 		  } 
 		  catch (IOException e) 
 		  {
-	         // TODO Auto-generated catch block
-	         e.printStackTrace();
-		      
+			 userInterface.getLblProcessInfo().setForeground(Color.RED); //Change info message colour to red
+	         userInterface.getLblProcessInfo().setText("Problem processing XML file. File is malformed."); //Display error message      
 		  }  
 		
-		userInterface.getTxtAreaProcessedMessage().setText(messageMap.get(currentHeader).getText());
 	}
 	
-	//This function receives the message header and message body from the User Interface. It decides how the message should be processed.
-	public String receiveMessage(String messageHeader, String messageBody)
+	//This will convert the text input from the UI into XML format, it will then write the data into a Message object instance.
+	public void importText(String xml) throws SAXException, IOException, ParserConfigurationException
 	{
-		processedMessage = ""; //Clear the processed message. So that it can be used with a new message
 		
-		//Convert the input from the GUI into an XML format, then write to the Message object
-		try 
+		try
 		{
-			xmlConverter(messageHeader + messageBody);
-		} 
-		catch (SAXException | IOException | ParserConfigurationException e) 
-		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		//Identify the message type, perform input validation. If valid send message for further processing, otherwise produce error message
-		if (currentHeader.charAt(0) == 'S')
-		{
-			System.out.println("SMS");
+			Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(new StringReader(xml))); //Convert input string into xml
+
+			NodeList messageNodes = doc.getElementsByTagName("Message"); //Store all Messages as nodes in a NodeList
 			
-			processSMS(messageMap.get(currentHeader).getText()); //Process the message
-			
+			for (int i = 0; i < messageNodes.getLength(); i++) //For each message
+			{
+				processedMessage = ""; //Clear the processed message. So that it can be used with a new message
+				
+				Element element = (Element)messageNodes.item(i); //Get the first message
+				
+				Message message = new Message();
+
+				message.setSender(element.getElementsByTagName("Sender").item(0).getTextContent());
+				message.setSubject(element.getElementsByTagName("Subject").item(0).getTextContent());
+				message.setSortCode(element.getElementsByTagName("SortCode").item(0).getTextContent());
+				message.setNatureOfIncident(element.getElementsByTagName("NatureOfIncident").item(0).getTextContent());
+				message.setText(element.getElementsByTagName("Text").item(0).getTextContent());
+				
+				currentHeader = element.getElementsByTagName("Header").item(0).getTextContent();
+				messageMap.put(currentHeader, message);
+				
+				checkInput(); //Check that message format is valid and determine message type
+				
+			} 
 		}
-		else if (currentHeader.charAt(0) == 'E')
+		catch (IOException e) 
 		{
-			System.out.println("Email");
-			
-			processEmail(messageMap.get(currentHeader).getText());
-		}
-		else if (currentHeader.charAt(0) == 'T')
-		{
-			System.out.println("Tweet");
-			
-			processTweet(messageMap.get(currentHeader).getText());
-		}
-		else
-		{
-			//Error if header does not start with a valid message identifier. Case sensitive.
-			System.out.println("Header is not valid.");
-		}
-		
-		return messageMap.get(currentHeader).getText();
+			userInterface.getLblProcessInfo().setForeground(Color.RED); //Change info message colour to red
+	        userInterface.getLblProcessInfo().setText("Input text format not valid."); //Display error message      
+		}  
+
 	}
+	
+	//--------------------------------INPUT VALIDATION--------------------------------------------------------------------
+	
+		//This function will figure out the type of message present and check that the input is of a valid format
+		public void checkInput()
+		{
+			
+			//Check that the header is valid
+			if (!currentHeader.matches("[S|T|E]\\d{9}"))
+			{
+
+				userInterface.getLblProcessInfo().setForeground(Color.RED); //Change info message colour to red
+		        userInterface.getLblProcessInfo().setText("Header " + currentHeader + " is not of valid format."); //Display error message 
+		        
+				return; //Do not proceed further
+			}
+			
+			//Check that the SMS is valid
+			if (currentHeader.charAt(0) == 'S')
+			{
+				if	( 	
+						messageMap.get(currentHeader).getSender().length() < 16 &&
+						messageMap.get(currentHeader).getSubject().length() == 0 &&
+						messageMap.get(currentHeader).getSortCode().length() == 0 &&
+						messageMap.get(currentHeader).getNatureOfIncident().length() == 0 &&
+						messageMap.get(currentHeader).getText().length() < 141
+					)
+				{
+					processSMS(messageMap.get(currentHeader).getText()); //Process the SMS message
+				}
+				else
+				{
+					userInterface.getLblProcessInfo().setForeground(Color.RED); //Change info message colour to red
+			        userInterface.getLblProcessInfo().setText("SMS with header " + currentHeader + " is not of valid format."); //Display error message 
+			        
+					return; //Do not proceed further
+				}
+				
+			}
+			
+			//Check that the Tweet is valid
+			if (currentHeader.charAt(0) == 'T')
+			{
+				if	( 	
+						messageMap.get(currentHeader).getSender().charAt(0) == '@' &&
+						messageMap.get(currentHeader).getSender().length() < 16 &&
+						messageMap.get(currentHeader).getSubject().length() == 0 &&
+						messageMap.get(currentHeader).getSortCode().length() == 0 &&
+						messageMap.get(currentHeader).getNatureOfIncident().length() == 0 &&
+						messageMap.get(currentHeader).getText().length() < 141
+					)
+				{
+					processTweet(messageMap.get(currentHeader).getText()); //Process the Tweet message
+				}
+				else
+				{
+					userInterface.getLblProcessInfo().setForeground(Color.RED); //Change info message colour to red
+			        userInterface.getLblProcessInfo().setText("Tweet with header " + currentHeader + " is not of valid format."); //Display error message 
+			        
+					return; //Do not proceed further
+				}
+			}
+			
+			//Check that the Email is valid
+			if (currentHeader.charAt(0) == 'E')
+			{
+				
+				final String DATE_FORMAT = "dd/MM/yy"; //The date format used to verify that the subject contains a valid date
+				final List<String> noiList = Arrays.asList("Theft", "Staff Attack", "ATM Theft", "Raid", "Customer Attack", "Staff Abuse", "Bomb Threat", "Terrorism", "Suspicious Incident", "Intelligence", "Cash Loss"); //This list contains the valid nature of incident contents.
+				boolean validDate;
+				
+		        //Split subject at the first number and keep the splitting character
+		        String[] splitSubject = messageMap.get(currentHeader).getSubject().split("(?=\\d)", 2);
+		        
+		        //Check if second part of the subject line is a valid date (there may not be a second part of the subject line, this is acceptable)
+		        try 
+		        {
+		            DateFormat df = new SimpleDateFormat(DATE_FORMAT);
+		            df.setLenient(false);
+		            df.parse(splitSubject[1]);
+		            validDate = true;
+		        } 
+		        catch (ParseException e) 
+		        {
+		        	validDate = false;
+		        }
+		        
+		        //If SIR email
+		        if (splitSubject[0].equals("SIR ") && validDate)
+		        {
+		        	if	( 	
+							EmailValidator.getInstance().isValid(messageMap.get(currentHeader).getSender()) && //Valid email address
+							messageMap.get(currentHeader).getSubject().length() < 21 && //Subject is 20 chars or less
+							messageMap.get(currentHeader).getSortCode().matches("\\d{2}-\\d{2}-\\d{2}") && //Sort code is of valid format
+							noiList.contains(messageMap.get(currentHeader).getNatureOfIncident()) && //Check that the nature of incident is one of a list of valid phrases
+							messageMap.get(currentHeader).getText().length() < 1029 //Text is 1028 chars or less
+						)
+					{
+		        		processEmail(messageMap.get(currentHeader).getText()); //Process the SIR Email message
+					}
+					else
+					{
+						userInterface.getLblProcessInfo().setForeground(Color.RED); //Change info message colour to red
+				        userInterface.getLblProcessInfo().setText("SIR Email with header " + currentHeader + " is not of valid format."); //Display error message 
+				        
+						return; //Do not proceed further
+					}
+		        }
+		        else if	( 	//If regular email
+						EmailValidator.getInstance().isValid(messageMap.get(currentHeader).getSender()) && //Valid email address
+						messageMap.get(currentHeader).getSubject().length() < 21 && //Subject is 20 chars or less
+						messageMap.get(currentHeader).getSortCode().length() == 0 && //Sort code is empty
+						messageMap.get(currentHeader).getNatureOfIncident().length() == 0 && //Nature of incident is empty
+						messageMap.get(currentHeader).getText().length() < 1029 //Text is 1028 chars or less
+					)
+				{
+		        	processEmail(messageMap.get(currentHeader).getText()); //Process the Regular Email message
+				}
+				else
+				{
+					userInterface.getLblProcessInfo().setForeground(Color.RED); //Change info message colour to red
+			        userInterface.getLblProcessInfo().setText("Regular Email with header " + currentHeader + " is not of valid format."); //Display error message 
+			        
+					return; //Do not proceed further
+				}
+
+			}
+			
+		}
 	
 	
 	//--------------------------------MESSAGE PROCESSING----------------------------------------------------------
@@ -261,18 +314,46 @@ public class UIController {
 	//This function processes SMS messages
 	private void processSMS(String body)
 	{
-		expandAbbreviations(body);
-		convertJSON();
+		expandAbbreviations(body); //Expand abbreviations in the message
+		
+		userInterface.getTxtAreaProcessedMessage().setText(messageMap.get(currentHeader).getText()); //Display the processed text
+		userInterface.getLblProcessInfo().setForeground(Color.GREEN); //Change info message colour to green
+        userInterface.getLblProcessInfo().setText("Message " + currentHeader + " processed successfully"); //Display success message
+        
+		convertJSON(); //Add message to the JSON file
 	}
 	
 	//This function processes Email messages
 	private void processEmail(String body)
 	{
-		detectURL(body);
-		convertJSON();
+		detectURL(body); //Find and remove URLS in the message, add them to the qurantineMap
 		
-		System.out.println(currentHeader + ": " + quarantineMap.get(currentHeader));
+		//If Email is an SIR, put SIR data into sirMap
+		if (messageMap.get(currentHeader).getSortCode().length() > 0)
+		{
+			sirList.push(messageMap.get(currentHeader).getSortCode() + " : " + messageMap.get(currentHeader).getNatureOfIncident());
+		}
 		
+		userInterface.getTxtAreaProcessedMessage().setText(messageMap.get(currentHeader).getText()); //Display the processed text
+		userInterface.getLblProcessInfo().setForeground(Color.GREEN); //Change info message colour to green
+        userInterface.getLblProcessInfo().setText("Message " + currentHeader + " processed successfully"); //Display success message
+        
+		convertJSON(); //Add message to the JSON file
+		
+	}
+	
+	//This function processes Tweet messages
+	private void processTweet(String body)
+	{
+		expandAbbreviations(body); //Expand abbreviations in the message
+		findHashtags(body); //Find hashtags in the message and add them to the trending list
+		findMentions(body); //Find mentions in the message and add them to the mentions list
+		
+		userInterface.getTxtAreaProcessedMessage().setText(messageMap.get(currentHeader).getText()); //Display the processed text
+		userInterface.getLblProcessInfo().setForeground(Color.GREEN); //Change info message colour to green
+        userInterface.getLblProcessInfo().setText("Message " + currentHeader + " processed successfully"); //Display success message
+
+		convertJSON(); //Add message to the JSON file
 	}
 	
 	//This will detect check if the provided word is a URL
@@ -305,26 +386,11 @@ public class UIController {
 	    
 	}
 	
-	//This function processes Tweet messages
-	private void processTweet(String body)
-	{
-		expandAbbreviations(body);
-		findHashtags(body);
-		findMentions(body);
-		convertJSON();
-
-	}
-	
-	//This function will separate the message into different sections
-	/*private void separateMessage(String body)
-	{
-		splitMessage = body.split("\\s+");  //Matches any punctuation that is followed by a white space
-	}*/
-	
 	//This method will find the hashtags in the tweet and store them in the hashtagList
 	private void findHashtags(String message)
 	{
 		String[] splitMessage = message.split("\\s+");  //Split the message into individual words on white spaces and new lines.
+		int count;
 		
         for ( String i : splitMessage)
         {
@@ -333,12 +399,21 @@ public class UIController {
 			{
 				System.out.println("Adding: " + i);
 				
-				hashtagList.add(i);
+				//hashtagList.add(i);
+				
+				//Return the current count of the hashtag, put 1 in trending HashMap for count if hashtag is new
+				//If hashtag is already in HashMap, increment it's count by 1
+				if (trendingMap.putIfAbsent(i, 1) != null)
+				{
+					count = trendingMap.get(i);
+					trendingMap.put(i, count + 1);
+				}				
+				
 			}
 
 		}
 		
-		System.out.println(hashtagList);
+		//System.out.println(hashtagList);
         
 	}
 	
@@ -420,14 +495,32 @@ public class UIController {
 		
 			while (line != null) //While line exists
 			{ 
-					fileContent += (line + "\n"); //...add line to fileContent and...
-					line = reader.readLine(); //read the next line.
+				fileContent += (line + "\n"); //...add line to fileContent and...
+				line = reader.readLine(); //read the next line.
 			}
+			
 			fileR.close();
-			  
+			
+			
+			//If file already contains an entry, then add a comma after the last entry, otherwise add a starting bracket as all JSON is written without a starting bracket later
+			if (!fileContent.equals("")) 
+			{
+				String temp;
+				temp = fileContent.substring(0, fileContent.length() - 2); //Remove the end bracket
+
+				fileContent = temp + ", \n";
+			}
+			else
+			{
+				fileContent +="{";
+			}
+			 
+			//Write the original file contents and new data back into the file
 	        FileWriter fileW = new FileWriter("./src/exports/processedmessages.json");
-	        fileW.write( fileContent + builder.create().toJson(messageMap) + "\n");
+	        fileW.write( fileContent + builder.create().toJson(messageMap).substring(1) + "\n"); //Write the original file + new JSON data (minus starting bracket)
 	        fileW.close();
+	        
+	        messageMap.clear(); //Clear the messageMap so that it only ever contains a single object to be written to the file.
 		  } 
 		  catch (IOException e) 
 		  {
@@ -436,23 +529,33 @@ public class UIController {
 		      
 		  }  
 		      
-		  System.out.println(builder.create().toJson(messageMap)); 
+		  //System.out.println(builder.create().toJson(messageMap)); 
 	 }
 
-	
-	//--------------------------------INPUT VALIDATION--------------------------------------------------------------------
-	
-	//This function will check that the input is of a valid format
-	private void checkInput()
-	{
-		
+	//---------------------------------------GETTERS-----------------------------------------------
+	public LinkedList<String> getMentionsList() {
+		return mentionsList;
 	}
 	
-	//Checks if the email address is valid
-	public static boolean isValidEmailAddress(String email) 
-	{
-		boolean valid = true;
-		return valid = EmailValidator.getInstance().isValid(email);
+	public HashMap<String, Integer> getTrendingMap() {
+		return trendingMap;
+	}
+
+	public LinkedList<String> getSirList() {
+		return sirList;
+	}
+
+	//---------------------------------------SETTERS-----------------------------------------------
+	public void setMentionsList(LinkedList<String> mentionsList) {
+		this.mentionsList = mentionsList;
+	}
+
+	public void setTrendingMap(HashMap<String, Integer> trendingMap) {
+		this.trendingMap = trendingMap;
+	}
+
+	public void setSirList(LinkedList<String> sirList) {
+		this.sirList = sirList;
 	}
 
 }

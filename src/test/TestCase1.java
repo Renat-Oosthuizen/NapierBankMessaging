@@ -2,13 +2,19 @@ package test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.io.IOException;
+
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.junit.jupiter.api.Test;
+import org.xml.sax.SAXException;
 
 import com.nbm.executable.*;
 
 class TestCase1 {
 	
 	//MessageProcessor processor = new MessageProcessor(); //Instantiating the MessageProcessor class
+	UIController uic = new UIController();
 	
 	private String header1 = "<Message>"
 			+ "<Header>T123456789</Header>";
@@ -33,7 +39,7 @@ class TestCase1 {
 	private String body3 = "<Sender>john.doe@example.org</Sender>"
 			+ "<Subject>SIR 20/10/2022</Subject>"
 			+ "<SortCode>99-99-99</SortCode>"
-			+ "<NatureOfIncident>Theft</NatureOfIncident>"
+			+ "<NatureOfIncident>Suspicious Incident</NatureOfIncident>"
 			+ "<Text>I can't find my favourite mug! It looks like the one from this website: www.ebay.com .</Text>"
 			+ "</Message>";
 	
@@ -50,10 +56,18 @@ class TestCase1 {
 	void receiveMessageTest1() 
 	{
 		
-		//processor.receiveMessage(header1, body1);
-		//processor.receiveMessage(header2, body2);
-		//processor.receiveMessage(header3, body3);
-		//processor.receiveMessage(header4, body4);
+		try 
+		{
+			//uic.importText(header1 + body1);
+			//uic.importText(header2 + body2);
+			uic.importText(header3 + body3);
+			//uic.importText(header4 + body4);
+		} 
+		catch (SAXException | IOException | ParserConfigurationException e) 
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 	}
 
