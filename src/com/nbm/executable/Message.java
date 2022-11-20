@@ -1,13 +1,17 @@
 package com.nbm.executable;
 
-
+/**
+ * This class stores the contents of a message during processing, before it is written to a JSON file.
+ * @author Renat Oosthuizen
+ * @since 20/11/2022
+ * */
 public class Message {
 	
-	private String sender = "";
-	private String subject = "";
-	private String sortCode = "";
-	private String natureOfIncident = "";
-	private String text = "";
+	private String sender = ""; //Sender of the message
+	private String subject = ""; //Subject of the message
+	private String sortCode = ""; //Sort Code of the message
+	private String natureOfIncident = ""; //Nature of Incident described in the message
+	private String text = ""; //Text of the message
 	
 	//--------------------------------GETTERS------------------------------------
 

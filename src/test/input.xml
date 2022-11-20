@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Root>
+	<Message>
+		<Header>T123456789</Header>
+		<Sender>@JohnSmith</Sender>
+		<Subject></Subject>
+		<SortCode></SortCode>
+		<NatureOfIncident></NatureOfIncident>
+		<Text>Saw your message @JohnDoe ROTFL, can't wait to see you. Looking forward to seeing you too @JaneDoe 
+		#Party #Fireworks
+		</Text>
+	</Message>
+	<Message>
+		<Header>E123456789</Header>
+		<Sender>janesmith@gmail.com</Sender>
+		<Subject>Check this out!</Subject>
+		<SortCode></SortCode>
+		<NatureOfIncident></NatureOfIncident>
+		<Text>Check out this website https://www.freeformatter.com/java-regex-tester.html#ad-output ! Youtube.com is also cool.</Text>
+	</Message>
+	<Message>
+		<Header>E123456780</Header>
+		<Sender>john.doe@example.org</Sender>
+		<Subject>SIR 20/10/2022</Subject>
+		<SortCode>99-99-99</SortCode>
+		<NatureOfIncident>Suspicious Incident</NatureOfIncident>
+		<Text>I can't find my favourite mug! It looks like the one from this website: www.ebay.com .</Text>
+	</Message>
+	<Message>
+		<Header>S123456789</Header>
+		<Sender>123456789012345</Sender>
+		<Subject></Subject>
+		<SortCode></SortCode>
+		<NatureOfIncident></NatureOfIncident>
+		<Text>Saw your message LOL . Can't wait to see you</Text>
+	</Message>
+</Root>

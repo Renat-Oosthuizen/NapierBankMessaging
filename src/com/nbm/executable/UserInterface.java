@@ -1,38 +1,37 @@
 package com.nbm.executable;
-import java.awt.BorderLayout;
+
 import java.awt.Color;
-import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
-import javax.xml.parsers.ParserConfigurationException;
-
-import org.xml.sax.SAXException;
-
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JTextArea;
+import javax.swing.SwingWorker;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.awt.event.ActionEvent;
 import java.awt.CardLayout;
-import java.awt.SystemColor;
-import javax.swing.UIManager;
 import java.awt.ScrollPane;
 
 
+/**
+ * This is the graphical user interface for the application. It accepts UIController as a parameter for data binding purposes.
+ * It uses a card layout and contains two screen. The first screen allows the user to import messages into the application. It also displays the processed messages.
+ * The second screen displays additional data from the application such as username mentions, trending hash tags and Significant Incident Report.
+ * @author Renat Oosthuizen
+ * @since 20/11/2022
+ * */
+@SuppressWarnings("serial")
 public class UserInterface extends JFrame{
 
-	/**LoginController variable that performs all the logic for this screen.*/
-	private UIController myController;
+	private UIController myController; //LoginController variable that performs all the logic for this screen.
 
 	private CardLayout cardLayout = new CardLayout(0, 0); //Create card layout with edges of 0 pixels
 	private JPanel contentPane = new JPanel(); //Assign contentPane to be a new instance of JPanel. This is the main panel of the JFrame
@@ -58,24 +57,22 @@ public class UserInterface extends JFrame{
 	private JLabel lblProcessedMessage = new JLabel("Latest Processed Message:"); //Label for the processed message text area
 	private JTextArea txtAreaProcessedMessage = new JTextArea(); //Processed message goes here
 	
-	private JLabel lblMentionsList = new JLabel("Mentions List:");
-	private final ScrollPane scrollPaneMentionsList = new ScrollPane();
-	private JTextArea txtAreaMentionsList = new JTextArea();
+	private JLabel lblMentionsList = new JLabel("Mentions List:"); //Label for the mentionsList in card2
+	private final ScrollPane scrollPaneMentionsList = new ScrollPane(); //Scroll panel containing txtAreaMentionsList, this allows the text area to be scrollable
+	private JTextArea txtAreaMentionsList = new JTextArea(); //Text area that displays the mentionsList
 	
-	private final JLabel lblTrendingList = new JLabel("Trending List:");
-	private final ScrollPane scrollPaneTrendingList = new ScrollPane();
-	private JTextArea txtAreaTrendingList = new JTextArea();
+	private final JLabel lblTrendingList = new JLabel("Trending List:"); //Label for the trendingList in card2
+	private final ScrollPane scrollPaneTrendingList = new ScrollPane(); //Scroll panel containing txtAreaTrendingList, this allows the text area to be scrollable
+	private JTextArea txtAreaTrendingList = new JTextArea(); //Text area that displays the trendingList
 	
-	private final JLabel lblSIRList = new JLabel("SIR List:");
-	private final ScrollPane scrollPaneSIRList = new ScrollPane();
-	private JTextArea txtAreaSIRList = new JTextArea();
+	private final JLabel lblSIRList = new JLabel("SIR List:"); //Label for the SIRList in card2
+	private final ScrollPane scrollPaneSIRList = new ScrollPane(); //Scroll panel containing txtAreaSIRList, this allows the text area to be scrollable
+	private JTextArea txtAreaSIRList = new JTextArea(); //Text area that displays the SIRList
 	
-	private JButton btnReturn = new JButton("Add More Messages");
+	private JButton btnReturn = new JButton("Add More Messages"); //Button in card2 allowing the user to return to card1 in order to import more messages
 	
 	public UserInterface(UIController controller) 
 	{
-	
-		
 		myController = controller; //Assign myController as an instance of UI_Controller
 		this.setTitle("Napier Bank Messaging"); //Set title for the JFrame
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); //The application will quit when the JFrame is closed.
@@ -91,7 +88,7 @@ public class UserInterface extends JFrame{
 		gbl_card1.rowHeights = new int[]{23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 		gbl_card1.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 		gbl_card1.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
-		card1.setBackground(UIManager.getColor("ToolTip.background"));
+		card1.setBackground(Color.LIGHT_GRAY);
 		card1.setLayout(gbl_card1);
 		
 		GridBagConstraints gbc_lblHeader = new GridBagConstraints();
@@ -140,6 +137,7 @@ public class UserInterface extends JFrame{
 		gbc_lblTextInfo.insets = new Insets(0, 0, 5, 5);
 		gbc_lblTextInfo.gridx = 6;
 		gbc_lblTextInfo.gridy = 11;
+		lblProcessInfo.setBackground(Color.BLACK);
 		card1.add(lblProcessInfo, gbc_lblTextInfo);
 		
 		GridBagConstraints gbc_btnProcessText = new GridBagConstraints();
@@ -185,25 +183,13 @@ public class UserInterface extends JFrame{
 		txtAreaBody.setLineWrap(true);
 		card1.add(txtAreaBody, gbc_txtAreaBody);
 		
-		//card1.setBackground(Color.BLUE);
-		//card2.setBackground(Color.RED);
-		
 		contentPane.add(card1, "1");  //Add card1 to contentPane CardLayout with index "1"
 						
 		//Process Text Button
 		btnProcessText.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				
-				System.out.println("Processing...");
-				try 
-				{
-					myController.importText(txtAreaHeader.getText() + txtAreaBody.getText());
-				} 
-				catch (SAXException | IOException | ParserConfigurationException e1) 
-				{
-					lblProcessInfo.setForeground(Color.RED); //Change info message colour to red
-					lblProcessInfo.setText("Input text format not valid."); //Display error message 
-				}
+
+				myController.importText(txtAreaHeader.getText() + txtAreaBody.getText());
 			}
 		});
 		
@@ -223,20 +209,20 @@ public class UserInterface extends JFrame{
 		btnProcessFile.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				
-				try 
-				{
-					myController.importXML(file);
+				SwingWorker<Void, String> worker = new SwingWorker<Void, String>() // This is a new thread. By running importXML(file) in the new thread, it is possible to update the GUI and add a delay between processing each message from the file
+						{
+
+							@Override
+							protected Void doInBackground() throws Exception 
+							{
+								myController.importXML(file); //Import the xml file and process it's messages
+								
+								return null;
+							}
 					
-				} catch (SAXException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				} catch (ParserConfigurationException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
+						};
+						
+						worker.execute(); //Run the worker thread
 			}
 		});
 		
@@ -274,7 +260,7 @@ public class UserInterface extends JFrame{
 			}
 		});
         
-		card2.setBackground(UIManager.getColor("ToolTip.background"));
+		card2.setBackground(Color.LIGHT_GRAY);
 		        		        		        		
 
 		//--------------------------------------CARD 2-------------------------------------------------------------------
