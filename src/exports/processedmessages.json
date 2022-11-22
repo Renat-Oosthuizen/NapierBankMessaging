@@ -1,3 +1,5 @@
-{"T123456789":{"sender":"@JohnSmith","subject":"","sortCode":"","natureOfIncident":"","text":"Saw your message @JohnDoe ROTFL, can't wait to see you. Looking forward to seeing you too @JaneDoe #Party #Fireworks"}, 
-"T123456780":{"sender":"@JohnSmith","subject":"","sortCode":"","natureOfIncident":"","text":"Saw your message @JohnDoe ROTFL, can't wait to see you. Looking forward to seeing you too @JaneDoe #Party #Fireworks"}, 
-"E123456789":{"sender":"john.doe@example.org","subject":"SIR 20/10/2022","sortCode":"99-99-99","natureOfIncident":"Suspicious Incident","text":"I can't find my favourite mug! It looks like the one from this website: <URL Quarantined> ."}}
+{"T123456781":{"sender":"@JohnSmith","subject":"","sortCode":"","natureOfIncident":"","text":"Test Tweet @Mention @JohnDoe #Party"}, 
+"T123456789":{"sender":"@JohnSmith","subject":"","sortCode":"","natureOfIncident":"","text":"Saw your message @JohnDoe <Rolling on the floor laughing>, can't wait to see you. Looking forward to seeing you too @JaneDoe \n\t\t#Party #Fireworks\n\t\t"}, 
+"E123456789":{"sender":"janesmith@gmail.com","subject":"Check this out!","sortCode":"","natureOfIncident":"","text":"Check out this website <URL Quarantined> ! <URL Quarantined> is also cool."}, 
+"E123456780":{"sender":"john.doe@example.org","subject":"SIR 20/10/2022","sortCode":"99-99-99","natureOfIncident":"Suspicious Incident","text":"I can't find my favourite mug! It looks like the one from this website: <URL Quarantined> ."}, 
+"S123456789":{"sender":"123456789012345","subject":"","sortCode":"","natureOfIncident":"","text":"Saw your message <Laughing out loud> . Can't wait to see you"}}

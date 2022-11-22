@@ -39,7 +39,7 @@ import com.linkedin.urls.detection.UrlDetectorOptions;
  * */
 public class UIController {
 	
-	private static UserInterface userInterface; //The UserInterface instance that is controller by this UIController class
+	private UserInterface userInterface; //The UserInterface instance that is controller by this UIController class
 	
 	private HashMap<String, String> abbreviationsMap = new HashMap<String, String>(); //HashMap to store abbreviations from the csv file
 	
@@ -99,14 +99,13 @@ public class UIController {
 		
 	  	try 
 		{
-	  		messageMap.clear(); //Clear the messageMap so that it only ever contains a single object to be written to the file. This prevents the same messages from getting appended.
-	  		
   			Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file); //Parse the xml file
   			
   			NodeList messageNodes = doc.getElementsByTagName("Message"); //Store all Messages as nodes in a NodeList
   			
   			for (int i = 0; i < messageNodes.getLength(); i++) //For each message
   			{
+  				messageMap.clear(); //Clear the messageMap so that it only ever contains a single object to be written to the file. This prevents the same messages from getting appended.
   				processedMessage = ""; //Clear the processed message. So that it can be used with a new message
   				
   				Element element = (Element)messageNodes.item(i); //Get the first message
@@ -138,7 +137,7 @@ public class UIController {
 			} 
 
   		  } 
-  		  catch (SAXException | IOException | ParserConfigurationException e) 
+  		  catch (SAXException | IOException | ParserConfigurationException | NullPointerException e) 
   		  {
   			 userInterface.getLblProcessInfo().setForeground(Color.RED); //Change info message colour to red
   	         userInterface.getLblProcessInfo().setText("Problem processing XML file. File is malformed."); //Display error message      
@@ -180,7 +179,7 @@ public class UIController {
 				
 			} 
 		}
-		catch (SAXException | IOException | ParserConfigurationException e) 
+		catch (SAXException | IOException | ParserConfigurationException | NullPointerException e) 
 		{
 			userInterface.getLblProcessInfo().setForeground(Color.RED); //Change info message colour to red
 	        userInterface.getLblProcessInfo().setText("Input text format not valid."); //Display error message      
@@ -295,7 +294,8 @@ public class UIController {
 						return; //Do not proceed further
 					}
 		        }
-		        else if	( 	//If regular email
+		        //If Regular Email
+		        else if	( 	
 						EmailValidator.getInstance().isValid(messageMap.get(currentHeader).getSender()) && //Valid email address
 						messageMap.get(currentHeader).getSubject().length() < 21 && //Subject is 20 chars or less
 						messageMap.get(currentHeader).getSortCode().length() == 0 && //Sort code is empty
@@ -453,7 +453,7 @@ public class UIController {
 	/**This function finds abbreviations in the message and expands them.
 	 * @param message : String containing the message text of the Tweet/SMS to be parsed.
 	 * */
-	public void expandAbbreviations(String message)
+	private void expandAbbreviations(String message)
 	{
 		String[] splitMessage = message.split("(?=[.,!? ])");  //Split the message at each white space and .,!? while preserving the splitting character
 		
